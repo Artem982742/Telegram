@@ -30,6 +30,19 @@ jobs:
           sed -i '294s/1024 \* 128/1024 * 512/;295s/= 4;/= 8;/;296s/= 4;/= 8;/;156s/= 4;/= 8;/;157s/= 4;/= 8;/' $L
           grep -c "KEEP_DELETED_MESSAGES" $J/MessagesController.java
           grep -n "APP_PACKAGE" gradle.properties
+      - name: Заглушка Firebase
+        run: |
+          cat > TMessagesProj_AppStandalone/google-services.json << 'EOF'
+          {
+            "project_info": {"project_number": "1234567890", "project_id": "restgram-dummy", "storage_bucket": "restgram-dummy.appspot.com"},
+            "client": [
+              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:aaaaaaaaaaaaaaaa", "android_client_info": {"package_name": "com.restgram.app"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
+              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:bbbbbbbbbbbbbbbb", "android_client_info": {"package_name": "com.restgram.app.web"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
+              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:cccccccccccccccc", "android_client_info": {"package_name": "com.restgram.app.beta"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]}
+            ],
+            "configuration_version": "1"
+          }
+          EOF
       - name: Сборка
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
