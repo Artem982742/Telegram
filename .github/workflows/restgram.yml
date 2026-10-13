@@ -1,0 +1,41 @@
+name: Build RestGram
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TG_API_ID: ${{ secrets.TG_API_ID }}
+      TG_API_HASH: ${{ secrets.TG_API_HASH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Патчи RestGram
+        run: |
+          J=TMessagesProj/src/main/java/org/telegram/messenger
+          sed -i "s/APP_ID = 4;/APP_ID = $TG_API_ID;/" $J/BuildVars.java
+          sed -i "s/APP_HASH = \"[^\"]*\";/APP_HASH = \"$TG_API_HASH\";/" $J/BuildVars.java
+          sed -i '/public static int APP_ID/i\    public static boolean KEEP_DELETED_MESSAGES = true;' $J/BuildVars.java
+          sed -i 's/if (deletedMessages != null) {/if (deletedMessages != null \&\& !BuildVars.KEEP_DELETED_MESSAGES) {/' $J/MessagesController.java
+          sed -i 's/MAX_ACCOUNT_DEFAULT_COUNT = 3;/MAX_ACCOUNT_DEFAULT_COUNT = 5;/;s/MAX_ACCOUNT_COUNT = 4;/MAX_ACCOUNT_COUNT = 5;/' $J/UserConfig.java
+          sed -i 's|<string name="AppName">Telegram</string>|<string name="AppName">RestGram</string>|' TMessagesProj/src/main/res/values/strings.xml
+          sed -i 's/^APP_PACKAGE=.*/APP_PACKAGE=com.restgram.app/' gradle.properties
+          A=TMessagesProj/src/main/assets/darkblue.attheme
+          for k in windowBackgroundGray windowBackgroundWhite actionBarDefault chat_wallpaper; do sed -i "s/^$k=.*/$k=-16777216/" $A; done
+          L=$J/FileLoadOperation.java
+          sed -i '294s/1024 \* 128/1024 * 512/;295s/= 4;/= 8;/;296s/= 4;/= 8;/;156s/= 4;/= 8;/;157s/= 4;/= 8;/' $L
+          grep -c "KEEP_DELETED_MESSAGES" $J/MessagesController.java
+          grep -n "APP_PACKAGE" gradle.properties
+      - name: Сборка
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          chmod +x gradlew
+          ./gradlew :TMessagesProj_AppStandalone:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RestGram-apk
+          path: "**/build/outputs/apk/**/*.apk"
