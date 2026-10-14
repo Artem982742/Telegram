@@ -32,21 +32,20 @@ jobs:
           grep -n "APP_PACKAGE" gradle.properties
       - name: Заглушка Firebase
         run: |
-          cat > /tmp/gs.json << 'EOF'
-          {
-            "project_info": {"project_number": "1234567890", "project_id": "restgram-dummy", "storage_bucket": "restgram-dummy.appspot.com"},
-            "client": [
-              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:aaaaaaaaaaaaaaaa", "android_client_info": {"package_name": "com.restgram.app"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
-              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:bbbbbbbbbbbbbbbb", "android_client_info": {"package_name": "com.restgram.app.web"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
-              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:cccccccccccccccc", "android_client_info": {"package_name": "com.restgram.app.beta"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
-              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:dddddddddddddddd", "android_client_info": {"package_name": "com.restgram.app.beta.web"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]}
-            ],
-            "configuration_version": "1"
-          }
-          EOF
+          python3 - << 'PY'
+          import json
+          pk = ["com.restgram.app","com.restgram.app.web","com.restgram.app.beta","com.restgram.app.beta.web",
+                "org.telegram.messenger","org.telegram.messenger.web","org.telegram.messenger.beta","org.telegram.messenger.beta.web"]
+          clients = []
+          for i, p in enumerate(pk):
+              clients.append({"client_info": {"mobilesdk_app_id": "1:1234567890:android:%016x" % (i + 1), "android_client_info": {"package_name": p}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]})
+          d = {"project_info": {"project_number": "1234567890", "project_id": "restgram-dummy", "storage_bucket": "restgram-dummy.appspot.com"}, "client": clients, "configuration_version": "1"}
+          json.dump(d, open("/tmp/gs.json", "w"))
+          PY
           find . -name google-services.json -not -path "*/build/*" -print
           for f in $(find . -name google-services.json -not -path "*/build/*"); do cp /tmp/gs.json "$f"; done
           cp /tmp/gs.json TMessagesProj_AppStandalone/google-services.json
+          cp /tmp/gs.json TMessagesProj/google-services.json
       - name: Сборка
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
