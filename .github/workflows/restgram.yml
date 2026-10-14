@@ -32,17 +32,21 @@ jobs:
           grep -n "APP_PACKAGE" gradle.properties
       - name: Заглушка Firebase
         run: |
-          cat > TMessagesProj_AppStandalone/google-services.json << 'EOF'
+          cat > /tmp/gs.json << 'EOF'
           {
             "project_info": {"project_number": "1234567890", "project_id": "restgram-dummy", "storage_bucket": "restgram-dummy.appspot.com"},
             "client": [
               {"client_info": {"mobilesdk_app_id": "1:1234567890:android:aaaaaaaaaaaaaaaa", "android_client_info": {"package_name": "com.restgram.app"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
               {"client_info": {"mobilesdk_app_id": "1:1234567890:android:bbbbbbbbbbbbbbbb", "android_client_info": {"package_name": "com.restgram.app.web"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
-              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:cccccccccccccccc", "android_client_info": {"package_name": "com.restgram.app.beta"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]}
+              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:cccccccccccccccc", "android_client_info": {"package_name": "com.restgram.app.beta"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]},
+              {"client_info": {"mobilesdk_app_id": "1:1234567890:android:dddddddddddddddd", "android_client_info": {"package_name": "com.restgram.app.beta.web"}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]}
             ],
             "configuration_version": "1"
           }
           EOF
+          find . -name google-services.json -not -path "*/build/*" -print
+          for f in $(find . -name google-services.json -not -path "*/build/*"); do cp /tmp/gs.json "$f"; done
+          cp /tmp/gs.json TMessagesProj_AppStandalone/google-services.json
       - name: Сборка
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
