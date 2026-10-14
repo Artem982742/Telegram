@@ -30,22 +30,15 @@ jobs:
           sed -i '294s/1024 \* 128/1024 * 512/;295s/= 4;/= 8;/;296s/= 4;/= 8;/;156s/= 4;/= 8;/;157s/= 4;/= 8;/' $L
           grep -c "KEEP_DELETED_MESSAGES" $J/MessagesController.java
           grep -n "APP_PACKAGE" gradle.properties
-      - name: Заглушка Firebase
+      - name: Убрать Google Services
         run: |
-          python3 - << 'PY'
-          import json
-          pk = ["com.restgram.app","com.restgram.app.web","com.restgram.app.beta","com.restgram.app.beta.web",
-                "org.telegram.messenger","org.telegram.messenger.web","org.telegram.messenger.beta","org.telegram.messenger.beta.web"]
-          clients = []
-          for i, p in enumerate(pk):
-              clients.append({"client_info": {"mobilesdk_app_id": "1:1234567890:android:%016x" % (i + 1), "android_client_info": {"package_name": p}}, "api_key": [{"current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummy000"}]})
-          d = {"project_info": {"project_number": "1234567890", "project_id": "restgram-dummy", "storage_bucket": "restgram-dummy.appspot.com"}, "client": clients, "configuration_version": "1"}
-          json.dump(d, open("/tmp/gs.json", "w"))
-          PY
-          find . -name google-services.json -not -path "*/build/*" -print
-          for f in $(find . -name google-services.json -not -path "*/build/*"); do cp /tmp/gs.json "$f"; done
-          cp /tmp/gs.json TMessagesProj_AppStandalone/google-services.json
-          cp /tmp/gs.json TMessagesProj/google-services.json
+          echo "=== было ==="
+          grep -rn "google-services\|gms.google" --include=*.gradle . || true
+          for f in $(grep -rl "google-services\|gms.google" --include=*.gradle . || true); do
+            sed -i "/google-services/d;/gms\.google/d" "$f"
+          done
+          echo "=== стало ==="
+          grep -rn "google-services\|gms.google" --include=*.gradle . || echo "пусто"
       - name: Сборка
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
